@@ -350,13 +350,13 @@ Response.Charset   = "utf-8"
 
         <div class="doc-card">
           <span class="doc-card-icon">&#128202;</span>
-          <div class="doc-card-title">Plan de Igualdad</div>
-          <div class="doc-card-desc">Políticas de igualdad y diversidad. Medidas y compromisos vigentes del plan trienal.</div>
+          <div class="doc-card-title">Política de Teletrabajo</div>
+          <div class="doc-card-desc">Normativa y procedimientos sobre trabajo remoto y flexibilidad horaria.</div>
         </div>
 
         <div class="doc-card">
           <span class="doc-card-icon">&#128203;</span>
-          <div class="doc-card-title">Manual de Acogida</div>
+          <div class="doc-card-title">Manual del Empleado</div>
           <div class="doc-card-desc">Guía para nuevos empleados: primeros pasos, recursos disponibles y contactos clave.</div>
         </div>
 
@@ -378,3 +378,4 @@ Response.Charset   = "utf-8"
 
 </body>
 </html>
+

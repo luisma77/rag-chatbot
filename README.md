@@ -277,7 +277,7 @@ O usa la API directamente:
 ```bash
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"question": "¿Cuál es la política de igualdad?"}'
+  -d '{"question": "¿Cuál es la condiciones de teletrabajo?"}'
 ```
 
 ---
@@ -829,3 +829,4 @@ Este proyecto está bajo la licencia **MIT** — libre para uso personal, comerc
 Ver el archivo [LICENSE](LICENSE) para el texto completo.
 
 MIT © 2026 — Contribuciones bienvenidas via Pull Request.
+

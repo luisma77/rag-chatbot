@@ -28,10 +28,11 @@ def test_prompt_has_system_rules():
 
 def test_system_persona_is_defined():
     assert len(SYSTEM_PERSONA) > 50
-    assert "APD-EYP" in SYSTEM_PERSONA
+    assert "asistente" in SYSTEM_PERSONA
 
 
 def test_conversational_prompt_contains_question():
     prompt = build_conversational_prompt("Hola, ¿qué eres?")
     assert "Hola, ¿qué eres?" in prompt
     assert "SYSTEM_PERSONA" not in prompt  # should embed the value, not the name
+

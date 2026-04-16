@@ -582,7 +582,7 @@ O descarga: [python.org/downloads](https://www.python.org/downloads/)
 SYSTEM_PERSONA = """Eres el asistente virtual de Mi Empresa S.L.
 ...
 CONOCIMIENTO BASE:
-- Kairos: aplicación móvil corporativa, código de empresa: 66
+- TELETRABAJO: La empresa sólo ofrece 1 día de teletrabajo entre martes, miércoles o jueves.
 - ...
 """
 ```

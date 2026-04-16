@@ -604,7 +604,7 @@ sudo apt install python3 python3-pip python3-venv
 SYSTEM_PERSONA = """You are the virtual assistant of My Company Ltd.
 ...
 BASE KNOWLEDGE:
-- Kairos: corporate mobile application, company code: 66
+- REMOTE WORK: The company only offers one day of working remotely between Tuesday, Wednesday, or Thursday.
 - ...
 """
 ```

@@ -1,6 +1,6 @@
 # ── Private documents & embeddings (NEVER commit) ────────────────────────────
-data/documents/
-chroma_db/
+data/documents/*
+chroma_db/*
 
 # Keep directory structure but not contents
 !data/documents/.gitkeep
@@ -29,8 +29,9 @@ env/
 ENV/
 
 # ── Logs ─────────────────────────────────────────────────────────────────────
-logs/
+logs/*
 *.log
+!logs/.gitkeep
 
 # ── OS / Editor ───────────────────────────────────────────────────────────────
 .DS_Store

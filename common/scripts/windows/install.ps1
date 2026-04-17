@@ -10,6 +10,9 @@ param(
 $OutputEncoding = [System.Text.Encoding]::UTF8
 chcp 65001 | Out-Null
 $ErrorActionPreference = "Stop"
+$script:AddedMachinePaths = [System.Collections.Generic.List[string]]::new()
+$script:WingetInstalledIds = [System.Collections.Generic.List[string]]::new()
+$script:WingetUpgradedIds = [System.Collections.Generic.List[string]]::new()
 
 function Write-Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 function Write-OK($msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
@@ -19,21 +22,75 @@ function Write-Info($msg) { Write-Host "  ... $msg" -ForegroundColor Gray }
 function Pause-End($msg = "Presiona Enter para cerrar") { Write-Host ""; Read-Host $msg | Out-Null }
 function Test-Cmd($cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
 
+function Ensure-Administrator {
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).
+        IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if ($isAdmin) { return }
+
+    Write-Warn "Se requieren permisos de administrador. Relanzando..."
+    $scriptPath = if ($PSCommandPath) { $PSCommandPath } else { $MyInvocation.MyCommand.Path }
+    $argList = @(
+        "-NoExit",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "`"$scriptPath`"",
+        "-ProfileName", "`"$ProfileName`"",
+        "-ManifestPath", "`"$ManifestPath`"",
+        "-ProfileEnvPath", "`"$ProfileEnvPath`"",
+        "-OsTemplatePath", "`"$OsTemplatePath`""
+    ) -join " "
+
+    try {
+        if (Test-Cmd "pwsh") {
+            Start-Process -FilePath "pwsh" -Verb RunAs -ArgumentList $argList | Out-Null
+        } else {
+            Start-Process -FilePath "powershell" -Verb RunAs -ArgumentList $argList | Out-Null
+        }
+    } catch {
+        Write-Err "No se pudo relanzar como administrador: $_"
+    }
+    exit
+}
+
 function Refresh-Path {
-    $machine = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $machine = Get-MachinePathValue
     $user = [Environment]::GetEnvironmentVariable("Path", "User")
     $env:Path = "$machine;$user"
+}
+
+function Get-MachinePathValue {
+    $registryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+    try {
+        return (Get-ItemProperty -Path $registryPath -Name Path -ErrorAction Stop).Path
+    } catch {
+        return [Environment]::GetEnvironmentVariable("Path", "Machine")
+    }
+}
+
+function Set-MachinePathValue {
+    param([string]$Value)
+    $registryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+    try {
+        Set-ItemProperty -Path $registryPath -Name Path -Value $Value -ErrorAction Stop
+    } catch {
+        try {
+            [Environment]::SetEnvironmentVariable("Path", $Value, "Machine")
+        } catch {
+            $escaped = $Value.Replace("^", "^^").Replace("&", "^&")
+            & reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path /t REG_EXPAND_SZ /d $escaped /f | Out-Null
+        }
+    }
 }
 
 function Add-ToMachinePath {
     param([string]$NewPath)
     if (-not $NewPath -or -not (Test-Path $NewPath)) { return }
-    $current = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $current = Get-MachinePathValue
     $parts = @()
     if ($current) { $parts = $current -split ";" | Where-Object { $_ } }
     if ($parts | Where-Object { $_.TrimEnd("\") -eq $NewPath.TrimEnd("\") }) { return }
-    [Environment]::SetEnvironmentVariable("Path", (($parts + $NewPath) -join ";"), "Machine")
+    Set-MachinePathValue -Value (($parts + $NewPath) -join ";")
     $env:Path += ";$NewPath"
+    $script:AddedMachinePaths.Add($NewPath)
 }
 
 function Prompt-YesNo {
@@ -62,7 +119,9 @@ function Winget-Ensure {
         [Parameter(Mandatory = $true)][string]$Id,
         [Parameter(Mandatory = $true)][string]$Label,
         [string]$VerifyCommand = "",
-        [string]$PostInstallPath = ""
+        [string]$PostInstallPath = "",
+        [bool]$AskBeforeInstall = $false,
+        [bool]$AskBeforeUpdate = $false
     )
     if (-not (Test-Cmd "winget")) {
         Write-Warn "winget no esta disponible. No se puede gestionar automaticamente: $Label"
@@ -74,18 +133,23 @@ function Winget-Ensure {
         Write-OK "$Label ya instalado."
         $upgradeInfo = winget upgrade --id $Id --accept-source-agreements 2>$null
         if ($upgradeInfo -and ($upgradeInfo | Out-String) -notmatch "No installed package found|No applicable update found") {
-            Write-Warn "Hay una actualizacion disponible para $Label."
-            if (Prompt-YesNo "Deseas actualizar $Label?" $true) {
+            if (-not $AskBeforeUpdate -or (Prompt-YesNo "Hay una actualizacion disponible para $Label. Deseas actualizarlo?" $true)) {
                 winget upgrade --id $Id --accept-package-agreements --accept-source-agreements --silent
                 Write-OK "$Label actualizado."
+                $script:WingetUpgradedIds.Add($Id)
             } else {
                 Write-Info "Se conserva la version actual de $Label."
             }
         }
     } else {
-        Write-Warn "$Label no encontrado. Instalando la version mas reciente compatible..."
-        winget install --id $Id --accept-package-agreements --accept-source-agreements --silent
-        Write-OK "$Label instalado."
+        if (-not $AskBeforeInstall -or (Prompt-YesNo "$Label no esta instalado. Deseas instalarlo?" $true)) {
+            Write-Warn "$Label no encontrado. Instalando la version mas reciente compatible..."
+            winget install --id $Id --accept-package-agreements --accept-source-agreements --silent
+            Write-OK "$Label instalado."
+            $script:WingetInstalledIds.Add($Id)
+        } else {
+            throw "$Label es obligatorio para continuar."
+        }
     }
 
     Refresh-Path
@@ -99,12 +163,7 @@ function Install-OrUpdate-Poppler {
     $popplerDir = "C:\poppler"
     if (Test-Path $popplerDir) {
         Write-OK "Poppler ya existe en $popplerDir"
-        if (Prompt-YesNo "Hay una instalacion previa de Poppler. Deseas actualizarla?" $false) {
-            Write-Info "Descargando ultimo release de Poppler..."
-        } else {
-            Add-ToMachinePath "C:\poppler\Library\bin"
-            return
-        }
+        Write-Info "Actualizando Poppler al ultimo release disponible..."
     } else {
         Write-Warn "Poppler no encontrado. Instalando..."
     }
@@ -157,9 +216,6 @@ function Ensure-OllamaModel {
     $names = @($tags.models | ForEach-Object { $_.name })
     if ($names -contains $ModelName) {
         Write-OK "Modelo $ModelName ya disponible."
-        if (Prompt-YesNo "Deseas refrescar el modelo $ModelName descargandolo de nuevo?" $false) {
-            & ollama pull $ModelName
-        }
     } else {
         Write-Warn "Modelo $ModelName no encontrado. Descargando..."
         & ollama pull $ModelName
@@ -178,6 +234,11 @@ function Ensure-InstallState {
         model = $Manifest.ollama_model
         embedding_provider = $Manifest.embedding_provider
         embedding_model = $Manifest.embedding_model
+        pip_requirement_files = @($Manifest.python_requirement_files)
+        paths_added = @($script:AddedMachinePaths)
+        winget_installed_ids = @($script:WingetInstalledIds)
+        winget_upgraded_ids = @($script:WingetUpgradedIds)
+        managed_directories = @("C:\poppler")
         updated_at = (Get-Date).ToString("s")
         quality_extras = [bool]$Manifest.quality_extras
     } | ConvertTo-Json
@@ -185,13 +246,7 @@ function Ensure-InstallState {
 }
 
 try {
-    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).
-        IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    if (-not $isAdmin) {
-        Write-Warn "Este instalador requiere privilegios de administrador."
-        Pause-End
-        exit 1
-    }
+    Ensure-Administrator
 
     $repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
     Set-Location $repoRoot
@@ -205,11 +260,8 @@ try {
     Write-Host "  Modelo:   $($manifest.ollama_model)"
     Write-Host ""
 
-    Write-Step "1/6 PowerShell 7"
-    Winget-Ensure -Id "Microsoft.PowerShell" -Label "PowerShell 7" -VerifyCommand "pwsh"
-
-    Write-Step "2/6 Python"
-    Winget-Ensure -Id "Python.Python.3.12" -Label "Python 3.12" -VerifyCommand "python"
+    Write-Step "1/5 Python"
+    Winget-Ensure -Id "Python.Python.3.12" -Label "Python 3.12" -VerifyCommand "python" -AskBeforeInstall $true -AskBeforeUpdate $true
     $pyExe = if (Test-Cmd "python") { "python" } elseif (Test-Cmd "py") { "py" } else { $null }
     if (-not $pyExe) { throw "Python no esta disponible tras la instalacion." }
 
@@ -218,19 +270,19 @@ try {
     if ($pyExePath) { Add-ToMachinePath (Split-Path $pyExePath) }
     if ($pyScripts) { Add-ToMachinePath $pyScripts }
 
-    Write-Step "3/6 Dependencias Python"
+    Write-Step "2/5 Dependencias Python"
     & $pyExe -m pip install --upgrade pip --quiet --disable-pip-version-check
     foreach ($reqFile in $manifest.python_requirement_files) {
         Write-Info "Instalando paquetes desde $reqFile"
         & $pyExe -m pip install -r $reqFile --no-warn-script-location
     }
 
-    Write-Step "4/6 Tesseract y Poppler"
+    Write-Step "3/5 Tesseract y Poppler"
     Winget-Ensure -Id "UB-Mannheim.TesseractOCR" -Label "Tesseract OCR" -VerifyCommand "tesseract" -PostInstallPath "C:\Program Files\Tesseract-OCR"
     Install-OrUpdate-Poppler
 
-    Write-Step "5/6 Ollama y modelo"
-    Winget-Ensure -Id "Ollama.Ollama" -Label "Ollama" -VerifyCommand "ollama"
+    Write-Step "4/5 Ollama y modelo"
+    Winget-Ensure -Id "Ollama.Ollama" -Label "Ollama" -VerifyCommand "ollama" -AskBeforeInstall $true -AskBeforeUpdate $true
     try {
         $null = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 3
         Write-OK "Ollama ya estaba corriendo."
@@ -244,7 +296,7 @@ try {
         Ensure-OllamaModel -ModelName $manifest.embedding_model
     }
 
-    Write-Step "6/6 Configuracion del entorno"
+    Write-Step "5/5 Configuracion del entorno"
     Merge-EnvTemplate -RepoRoot $repoRoot -BaseEnvPath $baseEnv -ProfileEnvPath $ProfileEnvPath -OsTemplatePath $OsTemplatePath
     New-Item -ItemType Directory -Force -Path (Join-Path $repoRoot "data\documents") | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $repoRoot "chroma_db") | Out-Null

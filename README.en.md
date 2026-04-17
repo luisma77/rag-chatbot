@@ -14,10 +14,13 @@
 
 Local RAG chatbot for internal documentation. It indexes PDFs, Office files, text and images, stores embeddings in ChromaDB, and answers questions with a **fully local Ollama model**. The repository is organized by **hardware profile** while keeping a **single shared backend**.
 
+> In this project, install and uninstall actions are treated as **system-level operations**, not per-user ones. Scripts that modify tools or PATH are intended to run with administrator/root privileges.
+
 ## Highlights
 
 - Shared backend in `src/`
 - Three hardware profiles: `SISTEMA-BAJO`, `SISTEMA-MEDIO`, `SISTEMA-ALTO`
+- Nine runnable variants: 3 profiles x 3 operating systems
 - Windows, Linux and macOS support
 - Shared installers in `common/scripts/`
 - Layered configuration in `common/env/`
@@ -33,34 +36,9 @@ Local RAG chatbot for internal documentation. It indexes PDFs, Office files, tex
 | `SISTEMA-MEDIO` | 24-32 GB RAM, mid CPU, no GPU | `qwen3:4b` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | balanced speed and quality |
 | `SISTEMA-ALTO` | 32 GB+ RAM, strong GPU | `qwen3:8b` | `qwen3-embedding:4b` via Ollama | highest answer quality with strong retrieval |
 
-Root launchers still point to `SISTEMA-MEDIO` for backward compatibility.
-
 ## Quick start
 
-### Default profile
-
-**Windows**
-
-```powershell
-.\run-install.bat
-.\run-chatbot.bat
-```
-
-**Linux**
-
-```bash
-bash run-install.sh
-bash run-chatbot.sh
-```
-
-**macOS**
-
-```bash
-bash run-install-mac.sh
-bash run-chatbot-mac.sh
-```
-
-### Direct profile launchers
+### Run a specific variant
 
 ```text
 Windows: .\SISTEMA-ALTO\windows\run-install.bat
@@ -74,7 +52,6 @@ macOS:   bash SISTEMA-ALTO/mac/run-install.sh
 rag-chatbot/
 ├── requirements.txt
 ├── requirements-dev.txt
-├── run-install.* / run-chatbot.* / run-uninstall.*
 ├── SISTEMA-BAJO/
 ├── SISTEMA-MEDIO/
 ├── SISTEMA-ALTO/
@@ -99,6 +76,21 @@ rag-chatbot/
 | Tesseract OCR | OCR for images and scanned PDFs |
 | Poppler | PDF rasterization for OCR |
 | Platform watcher | auto-reindex on file changes |
+
+## Privileges and prompts
+
+- Install and uninstall scripts target the **system environment**.
+- On Windows they self-elevate to administrator when needed.
+- On Linux/macOS they use elevated privileges for system changes.
+- Only **Python** and **Ollama** may prompt the user.
+- All other project dependencies are installed or removed automatically.
+- On Linux, the `Python` prompt covers the system Python toolchain (`python3`, `python3-pip`, `python3-venv`).
+
+Windows warning:
+
+- if you choose to remove all system Python installations, Windows may temporarily restart or destabilize the desktop shell (`explorer.exe`, taskbar, brief black screen)
+- if that happens, signing out or rebooting usually restores the session
+- this is not considered desirable, but it is a possible side effect of silently removing multiple system-level Python MSI components
 
 ## Config layering
 

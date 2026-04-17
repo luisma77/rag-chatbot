@@ -3,9 +3,9 @@ set -e
 
 PROFILE_NAME="$1"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-DOCUMENTS_PATH="${2:-$REPO_ROOT/data/documents}"
-API_PORT="${3:-8000}"
-REINDEX_HELPER="$REPO_ROOT/scripts/reindex_helper.py"
+REINDEX_HELPER="${2:-$REPO_ROOT/common/scripts/reindex_helper.py}"
+DOCUMENTS_PATH="${3:-$REPO_ROOT/data/documents}"
+API_PORT="${4:-8000}"
 FASTAPI_PID=""
 
 pause_end() { echo ""; read -p "Presiona Enter para cerrar" _; }

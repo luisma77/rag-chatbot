@@ -1,20 +1,17 @@
 #!/usr/bin/env python
 """
-reindex_helper.py — Clean per-file indexing progress output for watch-and-serve.ps1
+Shared reindex core.
 
-Usage:
-  python scripts/reindex_helper.py                      # scan & index all docs
-  python scripts/reindex_helper.py <filepath> <action>  # single file
+This file stays internal to the repository and is invoked through
+profile-specific wrappers so each runnable variant has its own entrypoint.
 """
-import sys
+import logging
 import os
+import sys
 
-# Ensure project root is in path
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, _ROOT)
 
-# Silence noisy loggers — we print our own clean output
-import logging
 logging.getLogger("src").setLevel(logging.WARNING)
 logging.getLogger("chromadb").setLevel(logging.ERROR)
 logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
@@ -28,8 +25,8 @@ def _icon(status: str) -> str:
 
 
 def index_single(filepath: str, action: str) -> None:
-    from src.ingestion.pipeline import process_file
     from pathlib import Path
+    from src.ingestion.pipeline import process_file
 
     name = Path(filepath).name
     print(f"\n  Archivo : {name}")
@@ -50,8 +47,8 @@ def index_all() -> None:
     from pathlib import Path
     import os as _os
     from src.config import settings
-    from src.vectordb.chroma_store import chroma_store
     from src.ingestion.pipeline import EXTRACTORS, process_file
+    from src.vectordb.chroma_store import chroma_store
 
     doc_dir = Path(settings.documents_dir)
     if not doc_dir.exists():
@@ -80,21 +77,21 @@ def index_all() -> None:
         stored_mtime = chroma_store.get_source_mtime(fp.name)
         pad = len(str(total))
 
+        print(f"  [{i:>{pad}}/{total}] {name}")
         if stored_mtime == current_mtime:
-            print(f"  [{i:>{pad}}/{total}] {name}")
-            print(f"        ~ Sin cambios — ya indexado")
+            print("        ~ Sin cambios — ya indexado")
             skipped += 1
+            continue
+
+        print("        → Indexando... ", end="", flush=True)
+        result = process_file(str(fp), "created")
+        if result["status"] == "ok":
+            print(f"{result.get('chunks_indexed', 0)} chunks ✓")
+            indexed += 1
         else:
-            print(f"  [{i:>{pad}}/{total}] {name}")
-            print(f"        → Indexando... ", end="", flush=True)
-            result = process_file(str(fp), "created")
-            if result["status"] == "ok":
-                print(f"{result.get('chunks_indexed', 0)} chunks ✓")
-                indexed += 1
-            else:
-                reason = result.get("reason") or result.get("error", "")
-                print(f"✗ {reason}")
-                errors += 1
+            reason = result.get("reason") or result.get("error", "")
+            print(f"✗ {reason}")
+            errors += 1
 
     print()
     print(f"  {'─' * 40}")
@@ -107,10 +104,8 @@ def index_all() -> None:
 
 
 if __name__ == "__main__":
-    # Verificar que se ejecuta desde la raiz del proyecto
     if not os.path.exists(os.path.join(_ROOT, "src", "main.py")):
-        print("\n  [ERROR] Ejecuta este script desde la raiz del proyecto:")
-        print(f"  python scripts/reindex_helper.py\n")
+        print("\n  [ERROR] Ejecuta este helper dentro de la repo del proyecto.\n")
         sys.exit(1)
 
     if len(sys.argv) >= 3:

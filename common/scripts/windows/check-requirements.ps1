@@ -11,6 +11,7 @@ $ErrorActionPreference = "Continue"
 
 function Write-Line([string]$msg, [string]$color = "White") { Write-Host "  $msg" -ForegroundColor $color }
 function Pause-End { Write-Host ""; Read-Host "Presiona Enter para cerrar" | Out-Null }
+function Test-Cmd([string]$Name) { [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
 
 try {
     $manifest = Get-Content $ManifestPath | ConvertFrom-Json
@@ -23,12 +24,12 @@ try {
     Write-Host ""
 
     foreach ($item in @(
-        @{ Name = "Python"; Command = "python" },
+        @{ Name = "Python"; Command = "python"; Alt = "py" },
         @{ Name = "Ollama"; Command = "ollama" },
         @{ Name = "Tesseract"; Command = "tesseract" },
-        @{ Name = "Poppler"; Command = "pdftoppm" }
+        @{ Name = "Poppler"; Command = "pdftoppm"; Path = "C:\poppler\Library\bin\pdftoppm.exe" }
     )) {
-        if (Get-Command $item.Command -ErrorAction SilentlyContinue) {
+        if ((Test-Cmd $item.Command) -or ($item.Alt -and (Test-Cmd $item.Alt)) -or ($item.Path -and (Test-Path $item.Path))) {
             Write-Line "[OK] $($item.Name) disponible" "Green"
         } else {
             Write-Line "[!!] $($item.Name) no encontrado" "Yellow"

@@ -13,9 +13,12 @@ El proyecto ya no se organiza alrededor de carpetas duplicadas por sistema opera
 
 1. Un solo backend para todos los perfiles.
 2. Los perfiles deben cambiar por configuración, no por copiar código.
-3. Cada sistema operativo reutiliza la misma lógica de instalación y arranque.
-4. Los launchers de usuario deben ser simples.
+3. Cada sistema operativo reutiliza lógica común, pero la entrada del usuario vive en la carpeta concreta de cada variante.
+4. No debe haber launchers duplicados en la raíz.
 5. La latencia es prioritaria, pero sin degradar innecesariamente la calidad.
+6. La instalación y desinstalación se entienden como operaciones de sistema.
+7. Solo Python y Ollama pueden requerir confirmación del usuario.
+8. El PATH se gestiona a nivel de sistema cuando el sistema operativo lo permite.
 
 ## Estructura objetivo aplicada
 
@@ -80,10 +83,12 @@ El perfil alto añade `docling` mediante `common/requirements/profile-high.txt`.
 
 ## Mejoras introducidas en la refactorización
 
-- Se eliminaron los wrappers redundantes `scripts-linux/` y `scripts-mac/` del raíz.
-- Los launchers raíz siguen existiendo solo como acceso rápido al perfil medio.
+- Se eliminaron las carpetas redundantes `scripts-<so>` del raíz y también los launchers duplicados del raíz.
+- La ejecución del usuario parte de `SISTEMA-BAJO/<so>/`, `SISTEMA-MEDIO/<so>/` o `SISTEMA-ALTO/<so>/`.
 - Los scripts de arranque ya no ejecutan `pip install` en cada inicio.
 - Los instaladores preparan también el modelo de embeddings cuando el provider es `ollama`.
+- Los instaladores y desinstaladores operan sobre el entorno de sistema; en Linux la pregunta de Python cubre `python3`, `python3-pip` y `python3-venv`.
+- En Windows, la desinstalación completa de Python debe tratarse como operación de riesgo porque puede afectar temporalmente a la shell del sistema.
 - La API `/chat` devuelve `sources` y `confidence`, alineada con la documentación.
 - El frontend muestra fuentes, confianza y latencia de la respuesta.
 

@@ -33,6 +33,8 @@ Usa `SISTEMA-MEDIO` si:
 
 ## Instalación por sistema operativo
 
+Las instalaciones y desinstalaciones de este perfil se hacen sobre el **entorno de sistema**. Solo `Python` y `Ollama` pueden pedir confirmación; el resto se resuelve automáticamente.
+
 ### Windows
 
 ```powershell
@@ -72,7 +74,7 @@ bash mac/run-uninstall.sh
 - mejor calidad conversacional que `SISTEMA-BAJO`
 - recuperación semántica estable
 - buen rendimiento en CPU moderna
-- es el perfil al que apuntan los launchers raíz
+- suele ser la mejor primera opción en la mayoría de equipos
 
 ## Limitaciones
 

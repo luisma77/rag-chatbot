@@ -34,6 +34,8 @@ Usa `SISTEMA-ALTO` si:
 
 ## Instalación por sistema operativo
 
+Las instalaciones y desinstalaciones de este perfil se hacen sobre el **entorno de sistema**. Solo `Python` y `Ollama` pueden pedir confirmación; el resto se resuelve automáticamente.
+
 ### Windows
 
 ```powershell

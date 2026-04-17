@@ -17,10 +17,13 @@
 
 Chatbot documental local basado en **RAG** que indexa PDFs, Office, texto e imágenes y responde con un **LLM en local mediante Ollama**, sin enviar datos a servicios externos. El proyecto está organizado por **perfil de hardware** y soporta **Windows, Linux y macOS** sin duplicar backend ni lógica de negocio.
 
+> Instalación y desinstalación se entienden en este proyecto como operaciones de **entorno de sistema**, no de usuario. Los scripts que modifican herramientas o PATH están pensados para ejecutarse con privilegios de administrador/root.
+
 ## ✨ Qué aporta esta estructura
 
 - **Un solo backend compartido** en `src/`
 - **Tres perfiles reales**: `SISTEMA-BAJO`, `SISTEMA-MEDIO`, `SISTEMA-ALTO`
+- **Nueve variantes operativas**: 3 perfiles x 3 sistemas operativos
 - **Instaladores compartidos por SO** en `common/scripts/`
 - **Configuración declarativa por capas** en `common/env/`
 - **Requirements separados** por runtime, desarrollo y perfil
@@ -35,8 +38,6 @@ Chatbot documental local basado en **RAG** que indexa PDFs, Office, texto e imá
 | `SISTEMA-MEDIO` | 24-32 GB RAM, CPU media, sin GPU | `qwen3:4b` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | equilibrio entre velocidad y calidad |
 | `SISTEMA-ALTO` | 32 GB+ RAM, GPU potente | `qwen3:8b` | `qwen3-embedding:4b` vía Ollama | máxima calidad manteniendo baja latencia |
 
-> Los launchers del raíz siguen existiendo por compatibilidad y apuntan a `SISTEMA-MEDIO`.
-
 ## 🏗️ Estructura actual
 
 ```text
@@ -45,9 +46,6 @@ rag-chatbot/
 ├── README.en.md
 ├── requirements.txt
 ├── requirements-dev.txt
-├── run-install.bat / .sh / -mac.sh
-├── run-chatbot.bat / .sh / -mac.sh
-├── run-uninstall.bat / .sh / -mac.sh
 ├── SISTEMA-BAJO/
 ├── SISTEMA-MEDIO/
 ├── SISTEMA-ALTO/
@@ -71,32 +69,7 @@ rag-chatbot/
 
 ## 🚀 Inicio rápido
 
-### Opción 1: usar el perfil por defecto
-
-`SISTEMA-MEDIO` es la opción segura para la mayoría de equipos.
-
-**Windows**
-
-```powershell
-.\run-install.bat
-.\run-chatbot.bat
-```
-
-**Linux**
-
-```bash
-bash run-install.sh
-bash run-chatbot.sh
-```
-
-**macOS**
-
-```bash
-bash run-install-mac.sh
-bash run-chatbot-mac.sh
-```
-
-### Opción 2: instalar un perfil concreto
+### Ejecutar una variante concreta
 
 **Windows**
 
@@ -145,6 +118,15 @@ bash SISTEMA-ALTO/mac/run-install.sh
 | `common/requirements/profile-high.txt` | instalación perfil alto |
 | `common/requirements/quality-extractors.txt` | extras de ingesta avanzada (`docling`) |
 
+## 🔐 Política de permisos y preguntas
+
+- Los scripts de instalación y desinstalación trabajan sobre el **entorno de sistema**.
+- En Windows se autoelevan para operar como administrador.
+- En Linux/macOS usan privilegios elevados para instalar o retirar componentes del sistema.
+- Solo **Python** y **Ollama** pueden pedir confirmación al usuario.
+- El resto de dependencias del proyecto se instala o desinstala automáticamente.
+- En Linux, la pregunta de `Python` cubre el toolchain de sistema (`python3`, `python3-pip`, `python3-venv`).
+
 ## ⚙️ Capas de configuración
 
 La instalación genera `.env` combinando estas capas:
@@ -183,7 +165,7 @@ MAX_CONCURRENT_LLM=2
 - Es el perfil de referencia.
 - Usa `qwen3:4b` y embeddings multilingües ligeros.
 - Conserva OCR, Office y pipeline RAG completo con buena latencia.
-- Es el destino de los launchers raíz.
+- Suele ser la mejor primera opción para la mayoría de equipos.
 
 ### `SISTEMA-ALTO`
 
@@ -197,7 +179,7 @@ MAX_CONCURRENT_LLM=2
 ### Instalar
 
 ```powershell
-.\run-install.bat
+.\SISTEMA-MEDIO\windows\run-install.bat
 ```
 
 ### Verificar requisitos
@@ -209,22 +191,36 @@ pwsh -ExecutionPolicy Bypass -File .\SISTEMA-MEDIO\windows\check-requirements.ps
 ### Arrancar
 
 ```powershell
-.\run-chatbot.bat
+.\SISTEMA-MEDIO\windows\run-chatbot.bat
 ```
 
 ### Desinstalar el perfil por defecto
 
 ```powershell
-.\run-uninstall.bat
+.\SISTEMA-MEDIO\windows\run-uninstall.bat
 ```
+
+El desinstalador:
+
+- elimina dependencias Python del perfil
+- elimina Tesseract, Poppler y estado del proyecto
+- limpia PATH de sistema cuando aplica
+- intenta borrar los rastros de instalación gestionados por el proyecto a nivel de sistema
+- solo pregunta si quieres desinstalar también `Python` y `Ollama`
+
+Advertencia para Windows:
+
+- si eliges desinstalar todos los Python del sistema, Windows puede reiniciar o desestabilizar temporalmente el escritorio (`explorer.exe`, barra de tareas, pantalla en negro momentánea)
+- si ocurre, suele recuperarse cerrando sesión o reiniciando Windows
+- no se considera deseable, pero es un efecto secundario posible cuando se eliminan en silencio varios componentes MSI de Python a nivel de sistema
 
 ### Utilidad adicional
 
 Para gestionar el `PATH` del sistema:
 
 ```powershell
-pwsh -ExecutionPolicy Bypass -File .\scripts-windows\setup-path.ps1 -DryRun
-pwsh -ExecutionPolicy Bypass -File .\scripts-windows\setup-path.ps1
+pwsh -ExecutionPolicy Bypass -File .\common\scripts\windows\setup-path.ps1 -DryRun
+pwsh -ExecutionPolicy Bypass -File .\common\scripts\windows\setup-path.ps1
 ```
 
 ## 🐧 Linux
@@ -232,7 +228,7 @@ pwsh -ExecutionPolicy Bypass -File .\scripts-windows\setup-path.ps1
 ### Instalar
 
 ```bash
-bash run-install.sh
+bash SISTEMA-MEDIO/linux/run-install.sh
 ```
 
 ### Verificar requisitos
@@ -244,21 +240,24 @@ bash SISTEMA-MEDIO/linux/check-requirements.sh
 ### Arrancar
 
 ```bash
-bash run-chatbot.sh
+bash SISTEMA-MEDIO/linux/run-chatbot.sh
 ```
 
 ### Desinstalar
 
 ```bash
-bash run-uninstall.sh
+bash SISTEMA-MEDIO/linux/run-uninstall.sh
 ```
+
+La desinstalación es de sistema. Solo preguntará por `Python` y `Ollama`.
+En Linux, `Python` significa el toolchain de sistema (`python3`, `python3-pip`, `python3-venv`).
 
 ## 🍎 macOS
 
 ### Instalar
 
 ```bash
-bash run-install-mac.sh
+bash SISTEMA-MEDIO/mac/run-install.sh
 ```
 
 ### Verificar requisitos
@@ -270,14 +269,17 @@ bash SISTEMA-MEDIO/mac/check-requirements.sh
 ### Arrancar
 
 ```bash
-bash run-chatbot-mac.sh
+bash SISTEMA-MEDIO/mac/run-chatbot.sh
 ```
 
 ### Desinstalar
 
 ```bash
-bash run-uninstall-mac.sh
+bash SISTEMA-MEDIO/mac/run-uninstall.sh
 ```
+
+La desinstalación es de sistema. Solo preguntará por `Python` y `Ollama`.
+En macOS, `Python` significa la instalación de `python3` gestionada por Homebrew; el resto de fórmulas auxiliares del proyecto se retiran sin preguntar.
 
 ## 📄 Formatos soportados
 
@@ -368,9 +370,9 @@ No. El backend, los embeddings, la base vectorial y el modelo de chat trabajan e
 
 Sí. Cada perfil monta su `.env` y sus requirements, mientras `src/` permanece compartido.
 
-### ¿Por qué ya no existe `scripts-linux/` o `scripts-mac/` en el raíz?
+### ¿Por qué ya no existen carpetas `scripts-<so>` en el raíz?
 
-Porque duplicaban wrappers que ya existían por perfil y generaban confusión. La lógica compartida vive ahora en `common/scripts/` y el acceso de usuario se hace desde los launchers raíz o desde cada perfil.
+Porque duplicaban wrappers y mezclaban el acceso rápido con la lógica real. Ahora la ejecución del usuario se hace desde cada carpeta `SISTEMA/<so>/`, mientras `common/scripts/` queda como lógica compartida interna.
 
 ### ¿Por qué `SISTEMA-ALTO` usa embeddings por Ollama?
 

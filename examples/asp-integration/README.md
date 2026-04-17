@@ -70,13 +70,13 @@ cd rag-chatbot
 
 ### Paso 2 — Instalar todo
 
-Doble clic en `run-install.bat` o:
+Usa la variante Windows del perfil que vayas a desplegar. Si no tienes claro cuál elegir, empieza por `SISTEMA-MEDIO`:
 
 ```powershell
-.\run-install.bat
+.\SISTEMA-MEDIO\windows\run-install.bat
 ```
 
-Instala automáticamente el perfil medio por defecto: Python, Ollama, `qwen3:4b`, OCR, Poppler y dependencias del backend.
+Instala Python, Ollama, `qwen3:4b`, OCR, Poppler y dependencias del backend para esa variante.
 
 ### Paso 3 — Configurar .env
 
@@ -116,7 +116,7 @@ New-NetFirewallRule `
 
 ```powershell
 # Arrancar y dejar corriendo (o configurar como servicio Windows)
-.\run-chatbot.bat
+.\SISTEMA-MEDIO\windows\run-chatbot.bat
 ```
 
 Para que arranque automáticamente con Windows, crear una tarea programada:

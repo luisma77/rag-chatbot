@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$ProfileName,
     [Parameter(Mandatory = $true)][string]$ProfileEnvPath,
+    [string]$ReindexHelperPath = "",
     [string]$DocumentsPath = ".\data\documents",
     [string]$ApiPort = "8000",
     [int]$DebounceMs = 5000
@@ -59,7 +60,7 @@ function Start-FastAPI([string]$RepoRoot) {
 }
 
 function Invoke-Reindex([string]$RepoRoot, [string]$FilePath = "", [string]$Action = "") {
-    $helper = Join-Path $RepoRoot "scripts\reindex_helper.py"
+    $helper = if ($ReindexHelperPath) { $ReindexHelperPath } else { Join-Path $RepoRoot "common\scripts\reindex_helper.py" }
     if ($FilePath) {
         & python $helper $FilePath $Action
     } else {

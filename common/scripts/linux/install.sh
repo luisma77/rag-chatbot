@@ -9,6 +9,7 @@ QUALITY_EXTRAS="$5"
 REQUIREMENTS_FILE="$6"
 EMBEDDING_PROVIDER="$7"
 EMBEDDING_MODEL="$8"
+ORIGINAL_ARGS=("$@")
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 BASE_ENV="$REPO_ROOT/common/env/base.env"
 
@@ -20,6 +21,12 @@ log_step() { echo -e "\n\033[36m==> $1\033[0m"; }
 log_ok()   { echo -e "  \033[32m[OK]\033[0m $1"; }
 log_warn() { echo -e "  \033[33m[!!]\033[0m $1"; }
 log_info() { echo -e "  \033[90m...\033[0m $1"; }
+
+ensure_root() {
+  if [ "$(id -u)" -ne 0 ]; then
+    exec sudo -E bash "$0" "${ORIGINAL_ARGS[@]}"
+  fi
+}
 
 prompt_yes_no() {
   local question="$1"
@@ -47,18 +54,51 @@ ensure_apt_package() {
   if dpkg -s "$package" >/dev/null 2>&1; then
     log_ok "$label ya instalado."
     if apt list --upgradable 2>/dev/null | grep -q "^$package/"; then
-      log_warn "Hay actualizacion disponible para $label."
-      if prompt_yes_no "Deseas actualizar $label?" "yes"; then
-        sudo apt-get install -y --only-upgrade "$package"
-        log_ok "$label actualizado."
-      else
-        log_info "Se conserva la version actual de $label."
-      fi
+      log_warn "Hay actualizacion disponible para $label. Actualizando automaticamente..."
+      apt-get install -y --only-upgrade "$package"
+      log_ok "$label actualizado."
     fi
   else
     log_warn "$label no encontrado. Instalando la version mas reciente del repositorio..."
-    sudo apt-get install -y "$package"
+    apt-get install -y "$package"
     log_ok "$label instalado."
+  fi
+}
+
+python_toolchain_action_needed() {
+  if ! dpkg -s python3 >/dev/null 2>&1; then return 0; fi
+  if ! dpkg -s python3-pip >/dev/null 2>&1; then return 0; fi
+  if ! dpkg -s python3-venv >/dev/null 2>&1; then return 0; fi
+  if apt list --upgradable 2>/dev/null | grep -q "^python3/"; then return 0; fi
+  if apt list --upgradable 2>/dev/null | grep -q "^python3-pip/"; then return 0; fi
+  if apt list --upgradable 2>/dev/null | grep -q "^python3-venv/"; then return 0; fi
+  return 1
+}
+
+ensure_python_toolchain() {
+  if command -v python3 >/dev/null 2>&1 && command -v pip3 >/dev/null 2>&1; then
+    log_ok "Python 3 y pip ya estan disponibles."
+  fi
+
+  if python_toolchain_action_needed; then
+    if dpkg -s python3 >/dev/null 2>&1 && dpkg -s python3-pip >/dev/null 2>&1 && dpkg -s python3-venv >/dev/null 2>&1; then
+      if prompt_yes_no "Python del sistema tiene actualizaciones pendientes. Deseas actualizar el toolchain Python?" "yes"; then
+        apt-get install -y --only-upgrade python3 python3-pip python3-venv
+        log_ok "Toolchain Python actualizado."
+      else
+        log_warn "Se mantiene el toolchain Python actual."
+      fi
+    else
+      if prompt_yes_no "Python del sistema no esta completo. Deseas instalar Python 3, pip y venv?" "yes"; then
+        apt-get install -y python3 python3-pip python3-venv
+        log_ok "Toolchain Python instalado."
+      else
+        echo "[ERROR] Python 3 es obligatorio para continuar."
+        exit 1
+      fi
+    fi
+  else
+    log_ok "Toolchain Python al dia."
   fi
 }
 
@@ -66,9 +106,6 @@ ensure_ollama_model() {
   local model_name="$1"
   if ollama list 2>/dev/null | grep -q "$model_name"; then
     log_ok "Modelo $model_name ya disponible."
-    if prompt_yes_no "Deseas refrescar el modelo $model_name descargandolo de nuevo?" "no"; then
-      ollama pull "$model_name"
-    fi
   else
     log_warn "Modelo $model_name no descargado. Descargando..."
     ollama pull "$model_name"
@@ -77,19 +114,18 @@ ensure_ollama_model() {
 }
 
 cd "$REPO_ROOT"
+ensure_root
 echo ""
 echo -e "\033[35mRAG Chatbot — Instalacion $PROFILE_NAME (Linux)\033[0m"
 echo ""
 
 log_step "1/6 Python y herramientas base"
-sudo apt-get update -q
-ensure_apt_package python3 "Python 3"
-ensure_apt_package python3-pip "pip"
-ensure_apt_package python3-venv "python3-venv"
+apt-get update -q
+ensure_python_toolchain
 
 log_step "2/6 Dependencias Python"
-python3 -m pip install --upgrade pip -q
-python3 -m pip install -r "$REQUIREMENTS_FILE"
+python3 -m pip install --upgrade pip -q --break-system-packages
+python3 -m pip install -r "$REQUIREMENTS_FILE" --break-system-packages
 log_ok "Dependencias Python listas."
 
 log_step "3/6 Tesseract y Poppler"
@@ -102,13 +138,18 @@ ensure_apt_package inotify-tools "inotify-tools"
 log_step "4/6 Ollama"
 if command -v ollama >/dev/null 2>&1; then
   log_ok "Ollama ya instalado."
-  if prompt_yes_no "Deseas reinstalar/actualizar Ollama usando el instalador oficial?" "no"; then
+  if prompt_yes_no "Ollama ya esta instalado. Deseas actualizarlo/reinstalarlo?" "yes"; then
     curl -fsSL https://ollama.com/install.sh | sh
   fi
 else
-  log_warn "Ollama no encontrado. Instalando la version mas reciente..."
-  curl -fsSL https://ollama.com/install.sh | sh
-  log_ok "Ollama instalado."
+  if prompt_yes_no "Ollama no esta instalado. Deseas instalarlo?" "yes"; then
+    log_warn "Ollama no encontrado. Instalando la version mas reciente..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    log_ok "Ollama instalado."
+  else
+    echo "[ERROR] Ollama es obligatorio para continuar."
+    exit 1
+  fi
 fi
 
 log_step "5/6 Modelo del perfil"
@@ -132,7 +173,18 @@ cat > "$REPO_ROOT/install-state/${PROFILE_NAME,,}-linux.json" <<EOF
   "model": "$MODEL_NAME",
   "embedding_provider": "$EMBEDDING_PROVIDER",
   "embedding_model": "$EMBEDDING_MODEL",
-  "quality_extras": "$QUALITY_EXTRAS"
+  "quality_extras": "$QUALITY_EXTRAS",
+  "pip_requirement_file": "$REQUIREMENTS_FILE",
+  "apt_packages": [
+    "python3",
+    "python3-pip",
+    "python3-venv",
+    "tesseract-ocr",
+    "tesseract-ocr-spa",
+    "tesseract-ocr-eng",
+    "poppler-utils",
+    "inotify-tools"
+  ]
 }
 EOF
 log_ok "Estado de instalacion guardado."

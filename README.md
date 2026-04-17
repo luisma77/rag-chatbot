@@ -18,6 +18,16 @@ Chatbot local de consulta documental basado en **RAG** (Retrieval-Augmented Gene
 
 ---
 
+## 🧭 Perfiles del proyecto
+
+- `SISTEMA-BAJO` — 16 GB RAM, CPU media/modesta, sin GPU
+- `SISTEMA-MEDIO` — 32 GB RAM, CPU media, sin GPU
+- `SISTEMA-ALTO` — 32 GB o más, GPU potente y CPU de gama alta
+
+Los launchers del raíz (`run-install.*`, `run-chatbot.*`) mantienen compatibilidad y redirigen por defecto a `SISTEMA-MEDIO`.
+
+---
+
 ## ✨ Características
 
 - **100 % local** — sin APIs externas, sin envío de datos
@@ -54,53 +64,31 @@ Chatbot local de consulta documental basado en **RAG** (Retrieval-Augmented Gene
 ```
 rag-chatbot/
 │
-├── 🪟  run-chatbot.bat           ← Arrancar  (Windows — doble clic)
-├── 🪟  run-install.bat           ← Instalar  (Windows — doble clic)
-├── 🐧  run-chatbot.sh            ← Arrancar  (Linux   — bash run-chatbot.sh)
-├── 🐧  run-install.sh            ← Instalar  (Linux   — bash run-install.sh)
-├── 🍎  run-install-mac.sh        ← Instalar  (macOS — bash run-install-mac.sh)
-├── 🍎  run-chatbot-mac.sh        ← Arrancar  (macOS — bash run-chatbot-mac.sh)
+├── 🪟  run-chatbot.bat           ← Wrapper raíz → SISTEMA-MEDIO
+├── 🪟  run-install.bat           ← Wrapper raíz → SISTEMA-MEDIO
+├── 🐧  run-chatbot.sh            ← Wrapper raíz → SISTEMA-MEDIO
+├── 🐧  run-install.sh            ← Wrapper raíz → SISTEMA-MEDIO
+├── 🍎  run-install-mac.sh        ← Wrapper raíz → SISTEMA-MEDIO
+├── 🍎  run-chatbot-mac.sh        ← Wrapper raíz → SISTEMA-MEDIO
 │
-├── scripts-windows/              ← Scripts exclusivos Windows (PowerShell 7)
-│   ├── install.ps1               ← Instalador completo
-│   ├── watch-and-serve.ps1       ← Watcher + servidor automático
-│   ├── check-requirements.ps1   ← Verificar dependencias del sistema
-│   └── setup-path.ps1           ← Gestionar variables PATH
+├── SISTEMA-BAJO/                 ← Perfil 16 GB RAM, sin GPU
+├── SISTEMA-MEDIO/                ← Perfil por defecto y compatibilidad
+├── SISTEMA-ALTO/                 ← Perfil 32 GB+ con GPU potente
 │
-├── scripts-linux/                ← Scripts exclusivos Linux (Bash)
-│   ├── install.sh                ← Instalador completo (apt + curl)
-│   ├── watch-and-serve.sh        ← Watcher con inotifywait + servidor
-│   └── check-requirements.sh    ← Verificar dependencias del sistema
-│
-├── scripts-mac/                  ← Scripts exclusivos macOS (Bash + Homebrew)
-│   ├── install.sh                ← Instalador completo (brew + curl)
-│   ├── watch-and-serve.sh        ← Watcher con fswatch + servidor
-│   └── check-requirements.sh    ← Verificar dependencias del sistema
+├── common/                       ← env, manifests, requirements y scripts comunes
+├── scripts-windows/              ← Wrappers legacy → SISTEMA-MEDIO
+├── scripts-linux/                ← Wrappers legacy → SISTEMA-MEDIO
+├── scripts-mac/                  ← Wrappers legacy → SISTEMA-MEDIO
 │
 ├── scripts/                      ← Compartido — ambas plataformas
 │   └── reindex_helper.py         ← Reindexado limpio (Python puro)
 │
-├── src/                          ← Código fuente (idéntico en ambas plataformas)
-│   ├── api/                      ← Endpoints FastAPI (chat, ingest, admin, auth)
-│   ├── cache/                    ← Caché de respuestas + memoria conversacional
-│   ├── embeddings/               ← Encoder sentence-transformers (384 dim)
-│   ├── ingestion/extractors/     ← PDF, DOCX, PPTX, XLSX, imagen, texto
-│   ├── llm/                      ← Cliente Ollama + constructor de prompts
-│   ├── vectordb/                 ← ChromaDB store (cosine similarity)
-│   ├── static/                   ← Interfaz web (chat.html)
-│   └── main.py + config.py       ← App FastAPI + configuración .env
-│
-├── examples/
-│   └── asp-integration/          ← Integración IIS / ASP Classic (dos servidores)
-│       ├── chat_api.ASP          ← Proxy listo para copiar al Servidor B
-│       └── README.md             ← Tutorial completo paso a paso
-│
+├── src/                          ← Backend compartido para todos los perfiles
+├── docs/                         ← Diseño, arquitectura y migración
 ├── data/documents/               ← Pon aquí tus PDFs, DOCXs, etc.
-├── tests/                        ← 52 tests (pytest-asyncio)
 ├── chroma_db/                    ← Base vectorial (auto-generada)
 ├── logs/                         ← Logs del sistema (auto-generados)
-├── requirements.txt              ← Paquetes Python
-└── .env.example                  ← Variables de entorno (plantilla)
+└── install-state/                ← Estado de instalación por perfil/SO
 ```
 
 ---

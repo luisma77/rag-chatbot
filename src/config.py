@@ -12,9 +12,14 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:3b"
     ollama_timeout: int = 120
+    system_profile: str = "medium"
+    llm_profile: str = "balanced"
+    use_gpu: bool = False
+    gpu_backend: str = "none"
 
     # Embeddings
     embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_profile: str = "balanced"
 
     # ChromaDB
     chroma_persist_dir: str = "./chroma_db"
@@ -43,10 +48,13 @@ class Settings(BaseSettings):
     # Chunking
     chunk_size: int = 800
     chunk_overlap: int = 100
+    ingestion_preset: str = "balanced"
+    pdf_pipeline: str = "balanced"
 
     # Tesseract
     tesseract_cmd: str = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     tesseract_lang: str = "spa+eng"
+    ocr_backend: str = "tesseract"
 
     # Poppler (for pdf2image) — set to None to use PATH
     poppler_path: str = r"C:\poppler\Library\bin"
@@ -54,6 +62,8 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
     log_dir: str = "./logs"
+    prompt_for_updates: bool = True
+    install_quality_extras: bool = False
 
 
 settings = Settings()

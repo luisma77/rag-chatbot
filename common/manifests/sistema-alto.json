@@ -1,0 +1,20 @@
+{
+  "profile_id": "sistema-alto",
+  "display_name": "SISTEMA-ALTO",
+  "hardware_target": "32 GB+ RAM, GPU tipo RTX 3060 Ti o superior, CPU muy potente",
+  "ollama_model": "qwen2.5:7b",
+  "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2",
+  "use_gpu": true,
+  "quality_extras": true,
+  "python_requirement_files": [
+    "common/requirements/base.txt",
+    "common/requirements/quality-extractors.txt"
+  ],
+  "external_tools": [
+    "python",
+    "ollama",
+    "tesseract",
+    "poppler",
+    "docling"
+  ]
+}

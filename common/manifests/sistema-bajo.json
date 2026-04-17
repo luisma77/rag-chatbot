@@ -1,0 +1,18 @@
+{
+  "profile_id": "sistema-bajo",
+  "display_name": "SISTEMA-BAJO",
+  "hardware_target": "16 GB RAM, CPU media/modesta, sin GPU",
+  "ollama_model": "qwen2.5:1.5b",
+  "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2",
+  "use_gpu": false,
+  "quality_extras": false,
+  "python_requirement_files": [
+    "common/requirements/base.txt"
+  ],
+  "external_tools": [
+    "python",
+    "ollama",
+    "tesseract",
+    "poppler"
+  ]
+}

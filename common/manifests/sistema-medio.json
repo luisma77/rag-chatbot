@@ -1,0 +1,18 @@
+{
+  "profile_id": "sistema-medio",
+  "display_name": "SISTEMA-MEDIO",
+  "hardware_target": "32 GB RAM, CPU media, sin GPU",
+  "ollama_model": "qwen2.5:3b",
+  "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2",
+  "use_gpu": false,
+  "quality_extras": false,
+  "python_requirement_files": [
+    "common/requirements/base.txt"
+  ],
+  "external_tools": [
+    "python",
+    "ollama",
+    "tesseract",
+    "poppler"
+  ]
+}

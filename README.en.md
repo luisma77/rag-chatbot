@@ -19,6 +19,16 @@ A local document-query chatbot based on **RAG** (Retrieval-Augmented Generation)
 
 ---
 
+## 🧭 Project Profiles
+
+- `SISTEMA-BAJO` — 16 GB RAM, modest/mid CPU, no GPU
+- `SISTEMA-MEDIO` — 32 GB RAM, mid CPU, no GPU
+- `SISTEMA-ALTO` — 32 GB+ RAM, strong GPU and high-end CPU
+
+Root launchers (`run-install.*`, `run-chatbot.*`) keep compatibility and redirect to `SISTEMA-MEDIO` by default.
+
+---
+
 ## ✨ Features
 
 - **100% local** — no external APIs, no data leaving your machine
@@ -55,46 +65,28 @@ A local document-query chatbot based on **RAG** (Retrieval-Augmented Generation)
 ```
 rag-chatbot/
 │
-├── 🪟  run-chatbot.bat           ← Start  (Windows — double click)
-├── 🪟  run-install.bat           ← Install (Windows — double click)
-├── 🐧  run-chatbot.sh            ← Start  (Linux   — bash run-chatbot.sh)
-├── 🐧  run-install.sh            ← Install (Linux   — bash run-install.sh)
+├── 🪟  run-chatbot.bat           ← Root wrapper → SISTEMA-MEDIO
+├── 🪟  run-install.bat           ← Root wrapper → SISTEMA-MEDIO
+├── 🐧  run-chatbot.sh            ← Root wrapper → SISTEMA-MEDIO
+├── 🐧  run-install.sh            ← Root wrapper → SISTEMA-MEDIO
 │
-├── scripts-windows/              ← Windows-only scripts (PowerShell 7)
-│   ├── install.ps1               ← Full installer
-│   ├── watch-and-serve.ps1       ← Watcher + automatic server
-│   ├── check-requirements.ps1   ← Verify system dependencies
-│   └── setup-path.ps1           ← Manage PATH environment variables
+├── SISTEMA-BAJO/                 ← 16 GB RAM profile, no GPU
+├── SISTEMA-MEDIO/                ← Default compatibility profile
+├── SISTEMA-ALTO/                 ← 32 GB+ profile with strong GPU
 │
-├── scripts-linux/                ← Linux-only scripts (Bash)
-│   ├── install.sh                ← Full installer (apt + curl)
-│   ├── watch-and-serve.sh        ← Watcher with inotifywait + server
-│   └── check-requirements.sh    ← Verify system dependencies
-│
-├── scripts/                      ← Shared — both platforms
+├── common/                       ← env, manifests, requirements and shared scripts
+├── scripts-windows/              ← Legacy wrappers → SISTEMA-MEDIO
+├── scripts-linux/                ← Legacy wrappers → SISTEMA-MEDIO
+├── scripts-mac/                  ← Legacy wrappers → SISTEMA-MEDIO
+├── scripts/                      ← Shared
 │   └── reindex_helper.py         ← Clean re-indexer (pure Python)
 │
-├── src/                          ← Source code (identical on both platforms)
-│   ├── api/                      ← FastAPI endpoints (chat, ingest, admin, auth)
-│   ├── cache/                    ← Response cache + conversational memory
-│   ├── embeddings/               ← sentence-transformers encoder (384 dim)
-│   ├── ingestion/extractors/     ← PDF, DOCX, PPTX, XLSX, image, text
-│   ├── llm/                      ← Ollama client + prompt builder
-│   ├── vectordb/                 ← ChromaDB store (cosine similarity)
-│   ├── static/                   ← Web interface (chat.html)
-│   └── main.py + config.py       ← FastAPI app + .env configuration
-│
-├── examples/
-│   └── asp-integration/          ← IIS / ASP Classic integration (two-server)
-│       ├── chat_api.ASP          ← Ready-to-copy proxy for Server B
-│       └── README.md             ← Complete step-by-step tutorial
-│
+├── src/                          ← Shared backend for all profiles
+├── docs/                         ← Design, architecture and migration
 ├── data/documents/               ← Put your PDFs, DOCXs, etc. here
-├── tests/                        ← 52 tests (pytest-asyncio)
 ├── chroma_db/                    ← Vector database (auto-generated)
 ├── logs/                         ← System logs (auto-generated)
-├── requirements.txt              ← Python packages
-└── .env.example                  ← Environment variables (template)
+└── install-state/                ← Per-profile installation state
 ```
 
 ---

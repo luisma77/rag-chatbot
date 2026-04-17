@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from src.config import settings
 from src.ingestion.pipeline import process_all
 from src.llm.ollama_client import check_health
 from src.logger import get_logger
@@ -16,7 +17,9 @@ async def health():
     return {
         "status": "ok" if ollama_ok else "degraded",
         "ollama": "ok" if ollama_ok else "unreachable",
-        "ollama_model": settings_model(),
+        "ollama_model": settings.ollama_model,
+        "embedding_provider": settings.embedding_provider,
+        "embedding_model": settings.embedding_model,
         "chromadb": "ok",
         "chromadb_vectors": vector_count,
     }
@@ -37,8 +40,3 @@ def reindex():
     result = process_all()
     logger.info(f"Reindexado completo: {result['ok']}/{result['total']} archivos")
     return result
-
-
-def settings_model() -> str:
-    from src.config import settings
-    return settings.ollama_model

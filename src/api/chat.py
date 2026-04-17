@@ -26,6 +26,21 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
 
 
+def _build_sources(hits: list[dict], limit: int = 3) -> list[dict]:
+    best_by_file: dict[str, float] = {}
+    for hit in hits:
+        source_file = hit.get("source_file", "desconocido")
+        score = float(hit.get("score", 0.0))
+        if score > best_by_file.get(source_file, -1.0):
+            best_by_file[source_file] = score
+
+    ranked = sorted(best_by_file.items(), key=lambda item: item[1], reverse=True)
+    return [
+        {"file": source_file, "score": round(score, 4)}
+        for source_file, score in ranked[:limit]
+    ]
+
+
 @router.post("/chat")
 async def chat(req: ChatRequest):
     start = time.time()
@@ -52,7 +67,7 @@ async def chat(req: ChatRequest):
         )
         conv_prompt = build_conversational_prompt(question, history=history)
         async with _semaphore:
-            answer = await generate(conv_prompt, temperature=0.7)
+            answer = await generate(conv_prompt, temperature=settings.ollama_temperature_chat)
 
         # Store in memory
         conversation_memory.add(session_id, "user", question)
@@ -60,6 +75,8 @@ async def chat(req: ChatRequest):
 
         return {
             "answer": answer,
+            "sources": [],
+            "confidence": "none",
             "cached": False,
             "response_time_ms": int((time.time() - start) * 1000),
         }
@@ -67,11 +84,12 @@ async def chat(req: ChatRequest):
     # 5. Build RAG prompt and call LLM (rate-limited via semaphore)
     prompt = build_prompt(question, hits, history=history)
     async with _semaphore:
-        answer = await generate(prompt)
+        answer = await generate(prompt, temperature=settings.ollama_temperature_rag)
 
     # 6. Determine confidence for caching
     avg_score = sum(h["score"] for h in hits) / len(hits)
     confidence = "high" if avg_score >= settings.cache_threshold else "low"
+    sources = _build_sources(hits) if confidence == "high" else []
 
     # 7. Store in conversation memory
     conversation_memory.add(session_id, "user", question)
@@ -79,6 +97,8 @@ async def chat(req: ChatRequest):
 
     response = {
         "answer": answer,
+        "sources": sources,
+        "confidence": confidence,
         "cached": False,
         "response_time_ms": int((time.time() - start) * 1000),
     }

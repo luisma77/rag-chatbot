@@ -58,7 +58,7 @@ CONTEXTO RECUPERADO:
 PREGUNTA ACTUAL:
 {question}
 
-RESPUESTA (en español):"""
+RESPUESTA (en el mismo idioma de la pregunta):"""
 
 
 def build_conversational_prompt(question: str, history: list[dict] | None = None) -> str:
@@ -73,4 +73,4 @@ Si la pregunta requiere información específica de documentos que no tienes, di
 PREGUNTA ACTUAL:
 {question}
 
-RESPUESTA (en español):"""
+RESPUESTA (en el mismo idioma de la pregunta):"""

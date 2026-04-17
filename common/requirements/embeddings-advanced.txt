@@ -1,1 +1,3 @@
+# El perfil alto usa por defecto embeddings servidos por Ollama.
+# Mantener esta capa como alias evita romper referencias antiguas.
 -r embeddings-basic.txt

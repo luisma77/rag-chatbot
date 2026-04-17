@@ -2,12 +2,13 @@
   "profile_id": "sistema-bajo",
   "display_name": "SISTEMA-BAJO",
   "hardware_target": "16 GB RAM, CPU media/modesta, sin GPU",
-  "ollama_model": "qwen2.5:1.5b",
-  "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2",
+  "ollama_model": "qwen3:1.7b",
+  "embedding_provider": "sentence-transformers",
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "use_gpu": false,
   "quality_extras": false,
   "python_requirement_files": [
-    "common/requirements/base.txt"
+    "common/requirements/profile-low.txt"
   ],
   "external_tools": [
     "python",

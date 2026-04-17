@@ -81,8 +81,6 @@ try {
         exit 1
     }
 
-    & python -m pip install -r requirements.txt -q --disable-pip-version-check 2>$null
-
     try {
         $null = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 3
         Write-Log "Ollama ya estaba corriendo." "Green"

@@ -120,6 +120,30 @@
     }
     .bubble code { font-family: 'Consolas', 'Fira Code', monospace; }
     .bubble p + p { margin-top: 8px; }
+    .bubble-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(136, 146, 176, .18);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(91, 124, 247, .10);
+      border: 1px solid rgba(91, 124, 247, .22);
+      color: var(--text);
+    }
+    .meta-chip.dim {
+      background: rgba(136, 146, 176, .10);
+      border-color: rgba(136, 146, 176, .18);
+    }
 
     /* ── Typing indicator ─────────────────────────── */
     .typing .dot-1, .typing .dot-2, .typing .dot-3 {
@@ -333,7 +357,7 @@
   }
 
   // ── Build a message bubble ────────────────────────
-  function addBubble(role, html, sources) {
+  function addBubble(role, html) {
     if (emptyState.parentNode) emptyState.remove();
 
     const wrap = document.createElement('div');
@@ -409,7 +433,7 @@
       const data = await resp.json();
       const rawAnswer = data.answer || data.response || data.message || JSON.stringify(data);
       const { clean } = extractInlineSources(rawAnswer);
-      addBubble('bot', formatAnswer(clean));
+      addBubble('bot', `${formatAnswer(clean)}${formatResponseMeta(data)}`);
     } catch (err) {
       removeTyping();
       const msg = err.name === 'TimeoutError'
@@ -473,6 +497,32 @@
       .replace(/((?:<br>|^)\s*[-•] .+)+/g, s => `<ul>${s.replace(/(?:<br>|^)\s*[-•] (.+)/g, '<li>$1</li>')}</ul>`);
 
     return html;
+  }
+
+  function formatResponseMeta(data) {
+    const parts = [];
+
+    if (Array.isArray(data.sources) && data.sources.length > 0) {
+      for (const source of data.sources) {
+        const label = escapeHtml(source.file || 'desconocida');
+        const score = typeof source.score === 'number' ? ` · ${Math.round(source.score * 100)}%` : '';
+        parts.push(`<span class="meta-chip">Fuente: ${label}${score}</span>`);
+      }
+    }
+
+    if (data.confidence) {
+      parts.push(`<span class="meta-chip dim">Confianza: ${escapeHtml(String(data.confidence))}</span>`);
+    }
+
+    if (typeof data.response_time_ms === 'number') {
+      parts.push(`<span class="meta-chip dim">${data.response_time_ms} ms</span>`);
+    }
+
+    if (data.cached) {
+      parts.push('<span class="meta-chip dim">Respuesta en caché</span>');
+    }
+
+    return parts.length ? `<div class="bubble-meta">${parts.join('')}</div>` : '';
   }
 </script>
 </body>

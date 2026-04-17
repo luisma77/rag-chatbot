@@ -17,7 +17,9 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("RAG Chatbot iniciando...")
     # process_all() skips files already indexed with the same mtime — safe to always call
+    from src.embeddings.encoder import close_embedding_clients
     from src.ingestion.pipeline import process_all
+    from src.llm.ollama_client import close_client
     from src.vectordb.chroma_store import chroma_store
     result = process_all()
     new_ok    = sum(1 for r in result.get("results", []) if r["status"] == "ok")
@@ -29,6 +31,8 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Backend listo para recibir peticiones")
     yield
+    close_embedding_clients()
+    await close_client()
     logger.info("RAG Chatbot detenido")
 
 

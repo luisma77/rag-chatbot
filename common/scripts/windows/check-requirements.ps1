@@ -47,6 +47,20 @@ try {
         Write-Line "[!!] Ollama no esta respondiendo en localhost:11434" "Yellow"
     }
 
+    if ($manifest.embedding_provider -eq "ollama" -and $manifest.embedding_model) {
+        try {
+            $tags = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 5
+            $names = @($tags.models | ForEach-Object { $_.name })
+            if ($names -contains $manifest.embedding_model) {
+                Write-Line "[OK] Embedding model $($manifest.embedding_model) disponible" "Green"
+            } else {
+                Write-Line "[!!] Embedding model $($manifest.embedding_model) no descargado" "Yellow"
+            }
+        } catch {
+            Write-Line "[!!] No se pudo verificar el modelo de embeddings de Ollama" "Yellow"
+        }
+    }
+
     if (Test-Path ".env") {
         Write-Line "[OK] .env presente" "Green"
     } else {

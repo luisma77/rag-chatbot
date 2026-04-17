@@ -1,6 +1,6 @@
 def test_default_values():
     from src.config import settings
-    assert settings.ollama_model == "qwen2.5:3b"
+    assert settings.ollama_model == "qwen3:4b"
     assert settings.top_k == 5
     assert settings.similarity_threshold == 0.55
     assert settings.max_concurrent_llm == 3

@@ -150,6 +150,23 @@ function Merge-EnvTemplate {
     Write-OK ".env actualizado para $ProfileName"
 }
 
+function Ensure-OllamaModel {
+    param([string]$ModelName)
+    Write-Info "Verificando modelo $ModelName..."
+    $tags = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 10
+    $names = @($tags.models | ForEach-Object { $_.name })
+    if ($names -contains $ModelName) {
+        Write-OK "Modelo $ModelName ya disponible."
+        if (Prompt-YesNo "Deseas refrescar el modelo $ModelName descargandolo de nuevo?" $false) {
+            & ollama pull $ModelName
+        }
+    } else {
+        Write-Warn "Modelo $ModelName no encontrado. Descargando..."
+        & ollama pull $ModelName
+        Write-OK "Modelo $ModelName listo."
+    }
+}
+
 function Ensure-InstallState {
     param([string]$RepoRoot, [object]$Manifest)
     $stateDir = Join-Path $RepoRoot "install-state"
@@ -159,6 +176,8 @@ function Ensure-InstallState {
         profile = $Manifest.profile_id
         os = "windows"
         model = $Manifest.ollama_model
+        embedding_provider = $Manifest.embedding_provider
+        embedding_model = $Manifest.embedding_model
         updated_at = (Get-Date).ToString("s")
         quality_extras = [bool]$Manifest.quality_extras
     } | ConvertTo-Json
@@ -220,18 +239,9 @@ try {
         Start-Process -FilePath "ollama" -ArgumentList "serve" -WindowStyle Hidden
         Start-Sleep -Seconds 5
     }
-    Write-Info "Verificando modelo $($manifest.ollama_model)..."
-    $tags = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 10
-    $names = @($tags.models | ForEach-Object { $_.name })
-    if ($names -contains $manifest.ollama_model) {
-        Write-OK "Modelo $($manifest.ollama_model) ya disponible."
-        if (Prompt-YesNo "Deseas refrescar el modelo descargandolo de nuevo?" $false) {
-            & ollama pull $manifest.ollama_model
-        }
-    } else {
-        Write-Warn "Modelo $($manifest.ollama_model) no encontrado. Descargando..."
-        & ollama pull $manifest.ollama_model
-        Write-OK "Modelo listo."
+    Ensure-OllamaModel -ModelName $manifest.ollama_model
+    if ($manifest.embedding_provider -eq "ollama" -and $manifest.embedding_model -and $manifest.embedding_model -ne $manifest.ollama_model) {
+        Ensure-OllamaModel -ModelName $manifest.embedding_model
     }
 
     Write-Step "6/6 Configuracion del entorno"

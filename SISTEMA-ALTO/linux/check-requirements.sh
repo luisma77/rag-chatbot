@@ -1,4 +1,4 @@
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-bash "$REPO_ROOT/common/scripts/linux/check-requirements.sh" "SISTEMA-ALTO" "qwen2.5:7b"
+bash "$REPO_ROOT/common/scripts/linux/check-requirements.sh" "SISTEMA-ALTO" "qwen3:8b" "ollama" "qwen3-embedding:4b"

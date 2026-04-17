@@ -74,8 +74,6 @@ if [ ! -f "$REPO_ROOT/.env" ]; then
 fi
 
 mkdir -p "$DOCUMENTS_PATH"
-python3 -m pip install -r "$REPO_ROOT/requirements.txt" -q --disable-pip-version-check
-
 if ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
   log_cyan "Iniciando Ollama..."
   ollama serve >/dev/null 2>&1 &

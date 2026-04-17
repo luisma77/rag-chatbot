@@ -10,16 +10,22 @@ class Settings(BaseSettings):
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "qwen2.5:3b"
+    ollama_model: str = "qwen3:4b"
     ollama_timeout: int = 120
-    system_profile: str = "medium"
+    ollama_keep_alive: str = "20m"
+    ollama_num_predict: int = 384
+    ollama_temperature_rag: float = 0.1
+    ollama_temperature_chat: float = 0.6
+    system_profile: str = "medio"
     llm_profile: str = "balanced"
     use_gpu: bool = False
     gpu_backend: str = "none"
 
     # Embeddings
-    embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_provider: str = "sentence-transformers"
+    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embedding_profile: str = "balanced"
+    embedding_batch_size: int = 32
 
     # ChromaDB
     chroma_persist_dir: str = "./chroma_db"
@@ -52,12 +58,12 @@ class Settings(BaseSettings):
     pdf_pipeline: str = "balanced"
 
     # Tesseract
-    tesseract_cmd: str = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    tesseract_cmd: str = "tesseract"
     tesseract_lang: str = "spa+eng"
     ocr_backend: str = "tesseract"
 
     # Poppler (for pdf2image) — set to None to use PATH
-    poppler_path: str = r"C:\poppler\Library\bin"
+    poppler_path: str = ""
 
     # Logging
     log_level: str = "INFO"

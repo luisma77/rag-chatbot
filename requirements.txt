@@ -1,1 +1,1 @@
--r common/requirements/base.txt
+-r common/requirements/runtime.txt

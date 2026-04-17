@@ -73,10 +73,10 @@ cd rag-chatbot
 Doble clic en `run-install.bat` o:
 
 ```powershell
-pwsh -ExecutionPolicy Bypass -File scripts\install.ps1
+.\run-install.bat
 ```
 
-Instala automáticamente: Python packages, Ollama, modelo qwen2.5:3b, Poppler, Tesseract.
+Instala automáticamente el perfil medio por defecto: Python, Ollama, `qwen3:4b`, OCR, Poppler y dependencias del backend.
 
 ### Paso 3 — Configurar .env
 
@@ -116,14 +116,14 @@ New-NetFirewallRule `
 
 ```powershell
 # Arrancar y dejar corriendo (o configurar como servicio Windows)
-pwsh -ExecutionPolicy Bypass -File scripts\watch-and-serve.ps1
+.\run-chatbot.bat
 ```
 
 Para que arranque automáticamente con Windows, crear una tarea programada:
 
 ```powershell
 $action  = New-ScheduledTaskAction -Execute "pwsh.exe" `
-    -Argument "-NonInteractive -ExecutionPolicy Bypass -File C:\rag-chatbot\scripts\watch-and-serve.ps1" `
+    -Argument "-NonInteractive -ExecutionPolicy Bypass -File C:\rag-chatbot\SISTEMA-MEDIO\windows\watch-and-serve.ps1" `
     -WorkingDirectory "C:\rag-chatbot"
 $trigger = New-ScheduledTaskTrigger -AtStartup
 Register-ScheduledTask -TaskName "RAG Chatbot" -Action $action -Trigger $trigger `

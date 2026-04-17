@@ -1,0 +1,2 @@
+-r requirements.txt
+-r common/requirements/dev.txt

@@ -28,6 +28,13 @@ Local RAG chatbot for internal documentation. It indexes PDFs, Office files, tex
 - Faster startup flow: no pip reinstall on each run
 - API now returns `sources`, `confidence`, `cached`, and `response_time_ms`
 
+## Clone this repository
+
+```bash
+git clone https://github.com/luisma77/rag-chatbot.git
+cd rag-chatbot
+```
+
 ## Profile matrix
 
 | Profile | Target hardware | Chat model | Embeddings | Goal |

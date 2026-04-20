@@ -30,6 +30,13 @@ Chatbot documental local basado en **RAG** que indexa PDFs, Office, texto e imá
 - **Sin carpetas raíz duplicadas** para Linux/macOS y sin reinstalar paquetes en cada arranque
 - **Mejor latencia operativa**: cliente Ollama reutilizable, `keep_alive`, caché y arranque más limpio
 
+## 🌐 Cómo clonarlo
+
+```bash
+git clone https://github.com/luisma77/rag-chatbot.git
+cd rag-chatbot
+```
+
 ## 🧭 Selector rápido de perfil
 
 | Perfil | Hardware objetivo | Modelo chat | Embeddings | Prioridad |
